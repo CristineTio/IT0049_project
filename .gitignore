@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.git/
+vendor/
+node_modules/
+
+# OS / editor artifacts
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
