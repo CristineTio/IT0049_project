@@ -42,4 +42,14 @@ abstract class BaseController extends Controller
         // Preload any models, libraries, etc, here.
         // $this->session = service('session');
     }
+
+    /**
+     * Renders a page view wrapped in the shared header and footer templates.
+     */
+    protected function render(string $view, array $data = []): string
+    {
+        return view('templates/header', $data)
+            . view($view, $data)
+            . view('templates/footer');
+    }
 }

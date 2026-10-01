@@ -6,19 +6,11 @@ class Pages extends BaseController
 {
     public function landing(): string
     {
-        $data['title'] = 'Home';
-
-        return view('templates/header', $data)
-            . view('pages/landing')
-            . view('templates/footer');
+        return $this->render('pages/landing', ['title' => 'Home']);
     }
 
     public function about(): string
     {
-        $data['title'] = 'About';
-
-        return view('templates/header', $data)
-            . view('pages/about')
-            . view('templates/footer');
+        return $this->render('pages/about', ['title' => 'About']);
     }
 }
