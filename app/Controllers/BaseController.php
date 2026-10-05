@@ -3,7 +3,9 @@
 namespace App\Controllers;
 
 use CodeIgniter\Controller;
+use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\RequestInterface;
+use CodeIgniter\Model;
 use CodeIgniter\HTTP\ResponseInterface;
 use Psr\Log\LoggerInterface;
 
@@ -51,5 +53,13 @@ abstract class BaseController extends Controller
         return view('templates/header', $data)
             . view($view, $data)
             . view('templates/footer');
+    }
+
+    /**
+     * Returns the record with this ID, or shows the 404 page if it doesn't exist.
+     */
+    protected function findOr404(Model $model, int $id): array
+    {
+        return $model->find($id) ?? throw PageNotFoundException::forPageNotFound();
     }
 }

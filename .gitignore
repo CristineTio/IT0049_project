@@ -24,6 +24,8 @@ writable/session/*
 writable/uploads/*
 !writable/uploads/index.html
 
-# Uploaded avatar thumbnails
+# Uploaded images
 public/uploads/avatars/*
 !public/uploads/avatars/index.html
+public/uploads/products/*
+!public/uploads/products/index.html

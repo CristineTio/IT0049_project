@@ -15,4 +15,8 @@ class CustomerModel extends Model
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
     protected $updatedField  = '';
+
+    // Deleted customers are kept (hidden) because past sales still reference them.
+    protected $useSoftDeletes = true;
+    protected $deletedField   = 'deleted_at';
 }

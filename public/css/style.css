@@ -1,12 +1,18 @@
 :root {
     --primary: #2563eb;
     --primary-dark: #1d4ed8;
+    --primary-soft: #eff6ff;
     --text: #1f2937;
     --muted: #6b7280;
     --border: #e5e7eb;
     --bg: #f5f7fb;
     --surface: #ffffff;
+    --surface-alt: #f9fafb;
     --danger: #dc2626;
+    --danger-bg: #fee2e2;
+    --danger-text: #991b1b;
+    --warning-bg: #fef3c7;
+    --warning-text: #92400e;
     --success-bg: #dcfce7;
     --success-text: #166534;
 }
@@ -26,9 +32,13 @@ body {
     min-height: 100vh;
 }
 
+a {
+    color: var(--primary);
+}
+
 .container {
     width: 100%;
-    max-width: 1080px;
+    max-width: 1120px;
     margin: 0 auto;
     padding: 0 16px;
 }
@@ -37,6 +47,10 @@ main.container {
     flex: 1;
     padding-top: 32px;
     padding-bottom: 48px;
+}
+
+.muted {
+    color: var(--muted);
 }
 
 /* Header and navigation */
@@ -48,11 +62,10 @@ main.container {
 .header-inner {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     flex-wrap: wrap;
-    gap: 8px;
-    padding-top: 14px;
-    padding-bottom: 14px;
+    gap: 8px 20px;
+    padding-top: 12px;
+    padding-bottom: 12px;
 }
 
 .brand {
@@ -66,6 +79,7 @@ main.container {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
+    flex: 1;
 }
 
 .nav a {
@@ -77,8 +91,31 @@ main.container {
 
 .nav a:hover,
 .nav a.active {
-    background: #eff6ff;
+    background: var(--primary-soft);
     color: var(--primary);
+}
+
+.header-action {
+    margin-left: auto;
+}
+
+/* On narrower screens the navigation moves to its own row under the brand. */
+@media (max-width: 960px) {
+    .nav {
+        order: 3;
+        flex-basis: 100%;
+        margin: 0 -12px;
+    }
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-name {
+    font-weight: 600;
 }
 
 /* Footer */
@@ -101,14 +138,15 @@ main.container {
 
 .hero p {
     color: var(--muted);
-    max-width: 600px;
+    max-width: 620px;
+    margin-bottom: 20px;
 }
 
 .cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 16px;
-    margin-top: 24px;
+    margin-top: 8px;
 }
 
 .card {
@@ -136,6 +174,16 @@ main.container {
 .card p {
     margin: 0;
     color: var(--muted);
+}
+
+.card-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.card-primary h2,
+.card-primary p {
+    color: #fff;
 }
 
 .about-list li {
@@ -166,6 +214,7 @@ main.container {
     color: #fff;
     font: inherit;
     font-weight: 600;
+    text-align: center;
     text-decoration: none;
     cursor: pointer;
 }
@@ -184,6 +233,39 @@ main.container {
     background: var(--bg);
 }
 
+.button-small {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+}
+
+.button-block {
+    width: 100%;
+}
+
+/* A button that looks like a link, used for POST actions such as Log out and Delete */
+.inline-form {
+    display: inline;
+    margin: 0;
+}
+
+.link-button {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--primary);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.link-button:hover {
+    text-decoration: underline;
+}
+
+.link-danger {
+    color: var(--danger);
+}
+
 /* Alerts */
 .alert {
     padding: 12px 16px;
@@ -194,6 +276,32 @@ main.container {
 .alert-success {
     background: var(--success-bg);
     color: var(--success-text);
+}
+
+.alert-error {
+    background: var(--danger-bg);
+    color: var(--danger-text);
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-warning {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.badge-danger {
+    background: var(--danger-bg);
+    color: var(--danger-text);
 }
 
 /* Tables */
@@ -218,11 +326,17 @@ td {
 }
 
 th {
-    background: #f9fafb;
+    background: var(--surface-alt);
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--muted);
+}
+
+th.num,
+td.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 tbody tr:last-child td {
@@ -230,7 +344,7 @@ tbody tr:last-child td {
 }
 
 tbody tr:hover {
-    background: #f9fafb;
+    background: var(--surface-alt);
 }
 
 td.actions {
@@ -238,31 +352,73 @@ td.actions {
 }
 
 td.actions a {
-    color: var(--primary);
     font-weight: 600;
     text-decoration: none;
+}
+
+td.actions > * + * {
+    margin-left: 14px;
 }
 
 .empty {
     color: var(--muted);
 }
 
-/* Avatars */
-.avatar {
+/* Pagination (CodeIgniter's default pager markup) */
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0;
+    margin: 20px 0 0;
+    list-style: none;
+}
+
+.pagination a {
+    display: block;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    text-decoration: none;
+}
+
+.pagination .active a {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+/* Images */
+.avatar,
+.thumb {
+    display: block;
     width: 40px;
     height: 40px;
-    border-radius: 50%;
     object-fit: cover;
-    display: block;
     background: var(--border);
 }
 
-.avatar-lg {
+.avatar {
+    border-radius: 50%;
+}
+
+.thumb {
+    border-radius: 6px;
+}
+
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+}
+
+.avatar-lg,
+.thumb-lg {
     width: 80px;
     height: 80px;
 }
 
-.avatar-field {
+.image-field {
     display: flex;
     align-items: center;
     gap: 16px;
@@ -270,15 +426,26 @@ td.actions a {
 
 /* Forms */
 .form {
-    max-width: 520px;
+    max-width: 560px;
     padding: 24px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
 }
 
+.form-plain {
+    padding: 0;
+    border: none;
+}
+
 .field {
     margin-bottom: 18px;
+}
+
+.field-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0 16px;
 }
 
 .field label {
@@ -289,15 +456,21 @@ td.actions a {
 
 .field input[type="text"],
 .field input[type="email"],
-.field input[type="tel"] {
+.field input[type="tel"],
+.field input[type="number"],
+.field input[type="password"],
+.field select {
     width: 100%;
     padding: 9px 12px;
     border: 1px solid var(--border);
     border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
     font: inherit;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
     outline: 2px solid var(--primary);
     outline-offset: -1px;
 }
@@ -313,6 +486,14 @@ td.actions a {
     font-size: 0.85rem;
 }
 
+.field-hint {
+    margin: -10px 0 18px;
+}
+
+.hint-error {
+    color: var(--danger);
+}
+
 /* Field error message rendered by validation_show_error() */
 .help-block {
     display: block;
@@ -323,6 +504,30 @@ td.actions a {
 
 .form-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 24px;
+}
+
+.sale-total {
+    margin: 4px 0 0;
+    font-size: 1.15rem;
+}
+
+/* Login */
+.login-card {
+    max-width: 400px;
+    margin: 24px auto;
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.login-card h1 {
+    margin: 0 0 4px;
+}
+
+.login-card .muted {
+    margin: 0 0 20px;
 }

@@ -3,17 +3,38 @@
 use CodeIgniter\Router\RouteCollection;
 
 /** @var RouteCollection $routes */
+
+// Public pages
 $routes->get('/', 'Pages::landing');
 $routes->get('about', 'Pages::about');
 
-$routes->get('customers', 'Customers::index');
-$routes->get('customers/new', 'Customers::new');
-$routes->post('customers', 'Customers::create');
-$routes->get('customers/(:num)/edit', 'Customers::edit/$1');
-$routes->post('customers/(:num)', 'Customers::update/$1');
+// Login is only for guests; logged-in staff are sent to the home page.
+$routes->group('', ['filter' => 'guest'], static function (RouteCollection $routes): void {
+    $routes->get('login', 'Auth::login');
+    $routes->post('login', 'Auth::attempt');
+});
 
-$routes->get('users', 'Users::index');
-$routes->get('users/new', 'Users::new');
-$routes->post('users', 'Users::create');
-$routes->get('users/(:num)/edit', 'Users::edit/$1');
-$routes->post('users/(:num)', 'Users::update/$1');
+// Everything below requires a logged-in staff member.
+$routes->group('', ['filter' => 'auth'], static function (RouteCollection $routes): void {
+    $routes->post('logout', 'Auth::logout');
+
+    // The same list/create/edit/delete routes for each management page.
+    $managementPages = [
+        'products'  => 'Products',
+        'customers' => 'Customers',
+        'users'     => 'Users',
+    ];
+
+    foreach ($managementPages as $path => $controller) {
+        $routes->get($path, $controller . '::index');
+        $routes->get($path . '/new', $controller . '::new');
+        $routes->post($path, $controller . '::create');
+        $routes->get($path . '/(:num)/edit', $controller . '::edit/$1');
+        $routes->post($path . '/(:num)', $controller . '::update/$1');
+        $routes->post($path . '/(:num)/delete', $controller . '::delete/$1');
+    }
+
+    $routes->get('sales', 'Sales::index');
+    $routes->get('sales/new', 'Sales::new');
+    $routes->post('sales', 'Sales::create');
+});

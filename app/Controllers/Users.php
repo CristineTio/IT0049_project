@@ -2,122 +2,125 @@
 
 namespace App\Controllers;
 
+use App\Libraries\ImageUploader;
 use App\Models\UserModel;
-use CodeIgniter\Exceptions\PageNotFoundException;
-use CodeIgniter\HTTP\Files\UploadedFile;
 use CodeIgniter\HTTP\RedirectResponse;
 use CodeIgniter\Images\Exceptions\ImageException;
 
+/**
+ * Staff account management.
+ */
 class Users extends BaseController
 {
-    protected $helpers = ['form'];
-
-    /**
-     * Folder (inside public/) where prepared avatar thumbnails are stored.
-     */
-    private const AVATAR_DIR = 'uploads/avatars/';
-
-    private const AVATAR_RULES = [
-        'label' => 'Profile Picture',
-        'rules' => [
-            'max_size[avatar,2048]',
-            'is_image[avatar]',
-            'mime_in[avatar,image/jpg,image/jpeg,image/png]',
-            'ext_in[avatar,jpg,jpeg,png]',
-        ],
-        'errors' => [
-            'max_size' => 'The Profile Picture must not be larger than 2MB.',
-            'is_image' => 'The Profile Picture must be a JPG or PNG image.',
-            'mime_in'  => 'The Profile Picture must be a JPG or PNG image.',
-            'ext_in'   => 'The Profile Picture must be a JPG or PNG image.',
-        ],
-    ];
-
     public function index(): string
     {
         return $this->render('users/index', [
-            'title' => 'User Accounts',
-            'users' => model(UserModel::class)->findAll(),
+            'title' => 'Staff',
+            'users' => model(UserModel::class)->orderBy('full_name')->findAll(),
         ]);
     }
 
     public function new(): string
     {
-        return $this->render('users/form', [
-            'title'  => 'New User',
-            'action' => site_url('users'),
-            'user'   => [],
-        ]);
+        return $this->form();
     }
 
     public function create(): RedirectResponse|string
     {
-        if (! $this->validate($this->rules())) {
-            return $this->new();
-        }
-
-        model(UserModel::class)->insert($this->request->getPost(['username', 'full_name']));
-
-        return redirect()->to('users')->with('success', 'User account created.');
+        return $this->save();
     }
 
     public function edit(int $id): string
     {
-        return $this->render('users/form', [
-            'title'  => 'Edit User',
-            'action' => site_url('users/' . $id),
-            'user'   => $this->findUser($id),
-        ]);
+        return $this->form($this->findOr404(model(UserModel::class), $id));
     }
 
     public function update(int $id): RedirectResponse|string
     {
-        $user  = $this->findUser($id);
-        $rules = $this->rules($id);
+        return $this->save($this->findOr404(model(UserModel::class), $id));
+    }
 
-        // The avatar is optional, so its rules only apply when a file was chosen.
-        $file      = $this->request->getFile('avatar');
-        $hasAvatar = $file !== null && $file->getError() !== UPLOAD_ERR_NO_FILE;
+    public function delete(int $id): RedirectResponse
+    {
+        $user = $this->findOr404(model(UserModel::class), $id);
 
-        if ($hasAvatar) {
-            $rules['avatar'] = self::AVATAR_RULES;
+        if ($id === (int) current_user()['id']) {
+            return redirect()->to('users')->with('error', 'You cannot delete your own account while logged in.');
         }
 
-        if (! $this->validate($rules)) {
-            return $this->edit($id);
-        }
+        model(UserModel::class)->delete($id);
 
-        $data = $this->request->getPost(['username', 'full_name']);
+        return redirect()->to('users')->with('success', "{$user['full_name']} was removed from staff.");
+    }
 
-        if ($hasAvatar) {
-            try {
-                $data['avatar'] = $this->saveAvatar($file);
-            } catch (ImageException) {
-                $this->validator->setError('avatar', 'The Profile Picture could not be processed. Please try another image.');
+    private function form(array $user = []): string
+    {
+        $isNew = ! isset($user['id']);
 
-                return $this->edit($id);
-            }
-        }
-
-        model(UserModel::class)->update($id, $data);
-
-        // The old thumbnail is no longer referenced once a new one is saved.
-        if ($hasAvatar && $user['avatar'] !== null) {
-            $this->deleteAvatar($user['avatar']);
-        }
-
-        return redirect()->to('users')->with('success', 'User account updated.');
+        return $this->render('users/form', [
+            'title'  => $isNew ? 'New Staff Member' : 'Edit Staff Member',
+            'action' => site_url($isNew ? 'users' : 'users/' . $user['id']),
+            'user'   => $user,
+        ]);
     }
 
     /**
-     * Validation rules for the username and full name. When editing, the
-     * user's own row is ignored by the unique username check.
+     * Validates the form, then creates a staff member or updates the one being edited.
      */
-    private function rules(?int $id = null): array
+    private function save(array $user = []): RedirectResponse|string
+    {
+        $isNew    = ! isset($user['id']);
+        $uploader = new ImageUploader('avatar', 'Profile Picture', UserModel::AVATAR_DIR, 300);
+        $avatar   = $uploader->file($this->request);
+        $rules    = $this->rules($user['id'] ?? null) + ($avatar !== null ? $uploader->rules() : []);
+
+        if (! $this->validate($rules)) {
+            return $this->form($user);
+        }
+
+        $data     = $this->request->getPost(['username', 'full_name']);
+        $password = (string) $this->request->getPost('password');
+
+        // A blank password keeps the current one. UserModel hashes it before saving.
+        if ($password !== '') {
+            $data['password'] = $password;
+        }
+
+        if ($avatar !== null) {
+            try {
+                $data['avatar'] = $uploader->store($avatar);
+            } catch (ImageException) {
+                $this->validator->setError('avatar', $uploader->processingError());
+
+                return $this->form($user);
+            }
+        }
+
+        if ($isNew) {
+            model(UserModel::class)->insert($data);
+
+            return redirect()->to('users')->with('success', 'Staff member added.');
+        }
+
+        model(UserModel::class)->update($user['id'], $data);
+
+        // The old avatar is no longer used once a new one is saved.
+        if (isset($data['avatar'])) {
+            $uploader->delete($user['avatar']);
+        }
+
+        return redirect()->to('users')->with('success', 'Staff member updated.');
+    }
+
+    /**
+     * Validation rules for the staff form. A password is required for new staff;
+     * when editing, it can be left blank to keep the current one.
+     */
+    private function rules(int|string|null $id): array
     {
         $unique = $id === null
             ? 'is_unique[users.username]'
-            : "is_unique[users.username,id,{$id}]";
+            : 'is_unique[users.username,id,' . (int) $id . ']';
 
         return [
             'username' => [
@@ -131,43 +134,17 @@ class Users extends BaseController
                 'label' => 'Full Name',
                 'rules' => 'required|max_length[100]',
             ],
+            'password' => [
+                'label' => 'Password',
+                'rules' => ($id === null ? 'required' : 'permit_empty') . '|min_length[8]|max_length[72]',
+            ],
+            'password_confirm' => [
+                'label'  => 'Confirm Password',
+                'rules'  => 'matches[password]',
+                'errors' => [
+                    'matches' => 'The passwords do not match.',
+                ],
+            ],
         ];
-    }
-
-    private function findUser(int $id): array
-    {
-        $user = model(UserModel::class)->find($id);
-
-        if ($user === null) {
-            throw PageNotFoundException::forPageNotFound('User not found.');
-        }
-
-        return $user;
-    }
-
-    /**
-     * Prepares a 300x300 display-ready thumbnail of the uploaded avatar,
-     * stores it in public/uploads/avatars, and returns its filename.
-     */
-    private function saveAvatar(UploadedFile $file): string
-    {
-        $filename = $file->getRandomName();
-
-        service('image')
-            ->withFile($file->getTempName())
-            ->reorient(true)
-            ->fit(300, 300, 'center')
-            ->save(FCPATH . self::AVATAR_DIR . $filename);
-
-        return $filename;
-    }
-
-    private function deleteAvatar(string $filename): void
-    {
-        $path = FCPATH . self::AVATAR_DIR . basename($filename);
-
-        if (is_file($path)) {
-            unlink($path);
-        }
     }
 }

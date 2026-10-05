@@ -3,13 +3,10 @@
 namespace App\Controllers;
 
 use App\Models\CustomerModel;
-use CodeIgniter\Exceptions\PageNotFoundException;
 use CodeIgniter\HTTP\RedirectResponse;
 
 class Customers extends BaseController
 {
-    protected $helpers = ['form'];
-
     private array $rules = [
         'full_name' => [
             'label' => 'Full Name',
@@ -31,66 +28,60 @@ class Customers extends BaseController
     public function index(): string
     {
         return $this->render('customers/index', [
-            'title'     => 'Customer Accounts',
-            'customers' => model(CustomerModel::class)->findAll(),
+            'title'     => 'Customers',
+            'customers' => model(CustomerModel::class)->orderBy('full_name')->findAll(),
         ]);
     }
 
     public function new(): string
     {
-        return $this->render('customers/form', [
-            'title'    => 'New Customer',
-            'action'   => site_url('customers'),
-            'customer' => [],
-        ]);
+        return $this->form();
     }
 
     public function create(): RedirectResponse|string
     {
-        if (! $this->validate($this->rules)) {
-            return $this->new();
-        }
-
-        model(CustomerModel::class)->insert($this->postedCustomer());
-
-        return redirect()->to('customers')->with('success', 'Customer account created.');
+        return $this->save();
     }
 
     public function edit(int $id): string
     {
-        return $this->render('customers/form', [
-            'title'    => 'Edit Customer',
-            'action'   => site_url('customers/' . $id),
-            'customer' => $this->findCustomer($id),
-        ]);
+        return $this->form($this->findOr404(model(CustomerModel::class), $id));
     }
 
     public function update(int $id): RedirectResponse|string
     {
-        $this->findCustomer($id);
+        return $this->save($this->findOr404(model(CustomerModel::class), $id));
+    }
 
+    public function delete(int $id): RedirectResponse
+    {
+        $customer = $this->findOr404(model(CustomerModel::class), $id);
+
+        model(CustomerModel::class)->delete($id);
+
+        return redirect()->to('customers')->with('success', "{$customer['full_name']} was deleted.");
+    }
+
+    private function form(array $customer = []): string
+    {
+        $isNew = ! isset($customer['id']);
+
+        return $this->render('customers/form', [
+            'title'    => $isNew ? 'New Customer' : 'Edit Customer',
+            'action'   => site_url($isNew ? 'customers' : 'customers/' . $customer['id']),
+            'customer' => $customer,
+        ]);
+    }
+
+    /**
+     * Validates the form, then creates a customer or updates the one being edited.
+     */
+    private function save(array $customer = []): RedirectResponse|string
+    {
         if (! $this->validate($this->rules)) {
-            return $this->edit($id);
+            return $this->form($customer);
         }
 
-        model(CustomerModel::class)->update($id, $this->postedCustomer());
-
-        return redirect()->to('customers')->with('success', 'Customer account updated.');
-    }
-
-    private function findCustomer(int $id): array
-    {
-        $customer = model(CustomerModel::class)->find($id);
-
-        if ($customer === null) {
-            throw PageNotFoundException::forPageNotFound('Customer not found.');
-        }
-
-        return $customer;
-    }
-
-    private function postedCustomer(): array
-    {
         $data = $this->request->getPost(['full_name', 'email', 'phone']);
 
         // Store a blank phone number as NULL instead of an empty string.
@@ -98,6 +89,14 @@ class Customers extends BaseController
             $data['phone'] = null;
         }
 
-        return $data;
+        if (! isset($customer['id'])) {
+            model(CustomerModel::class)->insert($data);
+
+            return redirect()->to('customers')->with('success', 'Customer added.');
+        }
+
+        model(CustomerModel::class)->update($customer['id'], $data);
+
+        return redirect()->to('customers')->with('success', 'Customer updated.');
     }
 }
