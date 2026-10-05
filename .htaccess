@@ -1,0 +1,11 @@
+# Used only when the web server's document root is this project folder, as on
+# free shared hosts (such as InfinityFree) where it cannot be changed to public/.
+# Every request, including requests for real files like .env or app/*, is passed
+# to public/, so the app runs normally and nothing outside public/ is served.
+#
+# Hosts whose document root already points to public/ never read this file.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

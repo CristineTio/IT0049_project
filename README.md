@@ -74,6 +74,9 @@ Change this password after deploying.
 
 > **XAMPP on Windows:** enable `extension=intl` and `extension=gd` in
 > `C:\xampp\php\php.ini`. If `php` is not recognized, run `C:\xampp\php\php.exe spark serve`.
+> You can also skip `spark serve`: put the project in `C:\xampp\htdocs\IT0049_project`,
+> set `app.baseURL=http://localhost/IT0049_project/` in `.env`, and open that address
+> while Apache is running.
 
 ## Database design
 
@@ -162,14 +165,41 @@ public/
 
 ## Deploying
 
-1. Upload the project and load the database with the SQL import (or migrations and seeders).
-2. Point the web root to the `public/` folder.
-3. Create `.env` on the server with the host's database credentials, plus:
+This is a PHP and MySQL application, so it needs a host that runs PHP and MySQL.
+**GitHub Pages cannot run it**: Pages only serves static files, so it shows this README
+instead of the app.
+
+Free PHP hosts such as [InfinityFree](https://www.infinityfree.com) work. The root
+`.htaccess` file passes every request to `public/`, so the whole project can be uploaded
+into the host's web folder (usually `htdocs`) without changing any settings.
+
+1. **Create the hosting account and database.** Sign up, create a website, then create a
+   MySQL database from the control panel. Note the database host, name, username, and
+   password that the control panel shows.
+2. **Import the database.** Open phpMyAdmin from the control panel, select your database,
+   and import `database/pos_db.sql` from the **Import** tab.
+3. **Create `.env`.** Download this repository (**Code → Download ZIP**) and extract it.
+   In the project folder, create a file named `.env` with your site address and the
+   database details from step 1:
 
    ```ini
    CI_ENVIRONMENT=production
-   app.baseURL=https://your-domain.example/
+   app.baseURL=http://your-site.example.com/
+
+   database.default.hostname=sql000.example.com
+   database.default.database=your_database_name
+   database.default.username=your_database_user
+   database.default.password=your_database_password
+   database.default.DBDriver=MySQLi
+   database.default.port=3306
    ```
 
-4. Make sure `writable/` and `public/uploads/` are writable by the web server.
-5. Log in and change the demo passwords.
+4. **Upload the files.** Upload everything inside the project folder, including the
+   `.htaccess` and `.env` files, into `htdocs` using the host's File Manager or an FTP
+   client such as FileZilla.
+5. **Open your site address.** The POS home page should appear. Log in with the demo
+   account and change the demo passwords.
+
+If your host lets you set the document root, you can point it to `public/` instead; the
+root `.htaccess` is then simply not used. Make sure `writable/` and `public/uploads/`
+are writable by the web server.
